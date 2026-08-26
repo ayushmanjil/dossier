@@ -22,11 +22,15 @@ const AuthContext = createContext(null);
 const LS_USERS_KEY = "sahityika_auth_users_v2";
 const LS_CURRENT_USER_KEY = "sahityika_current_user_v2";
 
+const ENV_ADMIN_NAME = import.meta.env.VITE_ADMIN_NAME || "Sahityika";
+const ENV_ADMIN_USERNAME = (import.meta.env.VITE_ADMIN_USERNAME || "sahityika2021").trim().toLowerCase();
+const ENV_ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "qwerty/sahityika";
+
 const DEFAULT_ADMIN = {
   id: "admin-default",
-  name: "Sahityika",
-  username: "sahityika2021",
-  password: "qwerty/sahityika",
+  name: ENV_ADMIN_NAME,
+  username: ENV_ADMIN_USERNAME,
+  password: ENV_ADMIN_PASSWORD,
   role: "admin",
   createdAt: new Date().toISOString(),
 };
@@ -178,9 +182,12 @@ export function AuthProvider({ children }) {
       return userCredential.user;
     } catch (err) {
       // If logging in with the predefined admin credentials and account hasn't been created yet in Firebase Auth
+      const matchesEnvAdmin =
+        (cleanUsername === ENV_ADMIN_USERNAME || cleanUsername === "admin") &&
+        (rawPass === ENV_ADMIN_PASSWORD || rawPass === "qwerty/sahityika" || rawPass === "admin123");
+
       if (
-        (cleanUsername === "sahityika2021" || cleanUsername === "admin") &&
-        (rawPass === "qwerty/sahityika" || rawPass === "admin123") &&
+        matchesEnvAdmin &&
         (err.code === "auth/user-not-found" ||
           err.code === "auth/invalid-credential" ||
           err.code === "auth/invalid-login-credentials")
@@ -188,7 +195,7 @@ export function AuthProvider({ children }) {
         try {
           const cred = await createUserWithEmailAndPassword(auth, email, rawPass);
           const adminProfile = {
-            name: "Sahityika",
+            name: ENV_ADMIN_NAME,
             username: cleanUsername,
             email,
             role: "admin",
