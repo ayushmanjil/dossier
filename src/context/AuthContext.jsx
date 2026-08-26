@@ -24,9 +24,9 @@ const LS_CURRENT_USER_KEY = "sahityika_current_user_v2";
 
 const DEFAULT_ADMIN = {
   id: "admin-default",
-  name: "Society Admin",
-  username: "admin",
-  password: "admin123",
+  name: "Sahityika",
+  username: "sahityika2021",
+  password: "qwerty/sahityika",
   role: "admin",
   createdAt: new Date().toISOString(),
 };
@@ -57,7 +57,7 @@ function getStoredLocalUsers() {
   }
 
   // Ensure default admin exists
-  if (!users.some((u) => u.username === "admin")) {
+  if (!users.some((u) => u.username === "sahityika2021" || u.username === "admin")) {
     users.unshift(DEFAULT_ADMIN);
   }
 
@@ -107,7 +107,7 @@ export function AuthProvider({ children }) {
             });
           } else {
             // First user created directly in Firebase Console default to admin
-            const defaultName = firebaseUser.email?.split("@")[0] || "Admin";
+            const defaultName = firebaseUser.email?.split("@")[0] || "Sahityika";
             const newRecord = {
               name: defaultName,
               username: defaultName.toLowerCase(),
@@ -127,8 +127,8 @@ export function AuthProvider({ children }) {
           setCurrentUser({
             id: firebaseUser.uid,
             email: firebaseUser.email,
-            name: firebaseUser.email?.split("@")[0] || "User",
-            username: firebaseUser.email?.split("@")[0] || "user",
+            name: firebaseUser.email?.split("@")[0] || "Sahityika",
+            username: firebaseUser.email?.split("@")[0] || "sahityika2021",
             role: "admin",
           });
         }
@@ -173,8 +173,35 @@ export function AuthProvider({ children }) {
 
     // Firebase Auth
     const email = formatEmail(cleanUsername);
-    const userCredential = await signInWithEmailAndPassword(auth, email, rawPass);
-    return userCredential.user;
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, rawPass);
+      return userCredential.user;
+    } catch (err) {
+      // If logging in with the predefined admin credentials and account hasn't been created yet in Firebase Auth
+      if (
+        (cleanUsername === "sahityika2021" || cleanUsername === "admin") &&
+        (rawPass === "qwerty/sahityika" || rawPass === "admin123") &&
+        (err.code === "auth/user-not-found" ||
+          err.code === "auth/invalid-credential" ||
+          err.code === "auth/invalid-login-credentials")
+      ) {
+        try {
+          const cred = await createUserWithEmailAndPassword(auth, email, rawPass);
+          const adminProfile = {
+            name: "Sahityika",
+            username: cleanUsername,
+            email,
+            role: "admin",
+            createdAt: serverTimestamp(),
+          };
+          await setDoc(doc(db, "users", cred.user.uid), adminProfile);
+          return cred.user;
+        } catch (createErr) {
+          console.error("Auto-initialization of admin failed:", createErr);
+        }
+      }
+      throw err;
+    }
   }
 
   async function logout() {

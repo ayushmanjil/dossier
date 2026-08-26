@@ -60,8 +60,8 @@ export default function AuthGate({ children }) {
           <div className="mt-6 rounded-md border border-brass/40 bg-brass-soft/20 px-3.5 py-2.5 text-center text-xs text-ink-soft space-y-1">
             <p>
               <span className="font-semibold text-ink">Admin:</span>{" "}
-              <code className="font-mono font-semibold text-oxblood">admin</code> /{" "}
-              <code className="font-mono font-semibold text-oxblood">admin123</code>
+              <code className="font-mono font-semibold text-oxblood">sahityika2021</code> /{" "}
+              <code className="font-mono font-semibold text-oxblood">qwerty/sahityika</code>
             </p>
             <p>
               <span className="font-semibold text-ink">Interviewer:</span>{" "}
