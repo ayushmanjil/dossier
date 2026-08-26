@@ -14,6 +14,10 @@ export default function Dashboard() {
   const [exportSuccess, setExportSuccess] = useState(false);
 
   async function handleExport() {
+    if (!isAdmin) {
+      alert("Unauthorized: Only administrators can export archive data.");
+      return;
+    }
     setExporting(true);
     setExportSuccess(false);
     try {
@@ -65,18 +69,20 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Action Controls */}
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
-          <button
-            onClick={handleExport}
-            disabled={exporting}
-            className="flex items-center gap-2 rounded-lg border border-line bg-paper-raised px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-ink transition-all hover:border-oxblood hover:text-oxblood active:scale-[0.99] shadow-xs disabled:opacity-50 cursor-pointer"
-            title="Export all applicants, responses, ratings, and statuses to CSV"
-          >
-            <span>↓</span>
-            <span>{exporting ? "Generating CSV…" : exportSuccess ? "✓ Exported" : "Export Archive CSV"}</span>
-          </button>
-        </div>
+        {/* Admin Action Controls */}
+        {isAdmin && (
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="flex items-center gap-2 rounded-lg border border-line bg-paper-raised px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-ink transition-all hover:border-oxblood hover:text-oxblood active:scale-[0.99] shadow-xs disabled:opacity-50 cursor-pointer"
+              title="Admin Only: Export all applicants, responses, ratings, and statuses to CSV"
+            >
+              <span>↓</span>
+              <span>{exporting ? "Generating CSV…" : exportSuccess ? "✓ Exported" : "Export Archive CSV"}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
