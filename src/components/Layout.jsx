@@ -13,16 +13,11 @@ export default function Layout({ children }) {
     <div className={`bg-paper text-ink ${isApplicantPage ? "h-screen overflow-hidden flex flex-col" : "min-h-screen"}`}>
       <header className="shrink-0 border-b border-line/70 bg-paper/95 backdrop-blur-sm z-30">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
-          <Link to="/" className="group flex items-center gap-3">
-            <DossierLogo size={30} />
-            <div className="flex items-baseline gap-2.5">
-              <span className="font-display text-xl font-semibold tracking-tight text-ink">
-                Sahityika
-              </span>
-              <span className="hidden font-mono text-[0.68rem] uppercase tracking-[0.22em] text-ink-faint sm:inline">
-                Recruitment Archive
-              </span>
-            </div>
+          <Link to="/" className="group flex items-center gap-2.5">
+            <DossierLogo size={28} />
+            <span className="font-display text-xl font-bold tracking-tight text-ink">
+              Dossier
+            </span>
           </Link>
 
           <div className="flex items-center gap-6">

@@ -25,10 +25,10 @@ export default function Dashboard() {
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 py-10">
       <div className="mb-10">
         <p className="font-mono text-[0.68rem] uppercase tracking-[0.22em] text-brass">
-          Recruitment Cycle
+          Applicant Archive
         </p>
         <h1 className="mt-2 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-          The Applicant Archive
+          Sahityika Recruitment Drive 2026
         </h1>
         <p className="mt-3 text-base text-ink-soft max-w-3xl">
           {total} {total === 1 ? "application has" : "applications have"} been sorted across{" "}
