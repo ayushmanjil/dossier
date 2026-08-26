@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { isFirebaseConfigured } from "../lib/firebase";
+import DossierLogo from "./DossierLogo";
 
 export default function AuthGate({ children }) {
   const { currentUser, loading, login } = useAuth();
@@ -13,7 +14,7 @@ export default function AuthGate({ children }) {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-paper text-ink font-mono text-xs uppercase tracking-[0.2em] text-ink-faint">
-        Authenticating…
+        Opening archive…
       </div>
     );
   }
@@ -40,11 +41,14 @@ export default function AuthGate({ children }) {
       <div className="mx-auto w-full max-w-sm">
         {/* Header */}
         <div className="text-center">
+          <div className="mb-4 flex justify-center">
+            <DossierLogo size={56} className="shadow-subtle rounded-md" />
+          </div>
           <p className="font-mono text-[0.68rem] uppercase tracking-[0.22em] text-brass">
             Sahityika Literary Society
           </p>
           <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-ink">
-            Recruitment Archive
+            Recruitment Dossier
           </h1>
           <p className="mt-2 text-xs text-ink-soft">
             Please sign in with your society credentials to access applicant dossiers.

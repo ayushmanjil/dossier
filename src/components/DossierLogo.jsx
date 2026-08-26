@@ -1,0 +1,53 @@
+export default function DossierLogo({ size = 28, className = "" }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 128 128"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`shrink-0 transition-transform duration-200 group-hover:scale-105 ${className}`}
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id="backFolderGradComp" x1="16" y1="24" x2="112" y2="104" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#E89B02" />
+          <stop offset="100%" stopColor="#D98A00" />
+        </linearGradient>
+        <linearGradient id="frontFlapGradComp" x1="16" y1="44" x2="116" y2="108" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#FFCE2B" />
+          <stop offset="60%" stopColor="#FFBE0B" />
+          <stop offset="100%" stopColor="#F29E02" />
+        </linearGradient>
+        <filter id="folderShadowComp" x="10" y="36" width="108" height="76" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
+          <feDropShadow dx="0" dy="2.5" stdDeviation="2" floodColor="#000000" floodOpacity="0.16" />
+        </filter>
+      </defs>
+
+      {/* Back Folder Tab and Body */}
+      <path
+        d="M22 24C16.477 24 12 28.477 12 34V96C12 101.523 16.477 106 22 106H102C107.523 106 112 101.523 112 96V44C112 38.477 107.523 34 102 34H65.657C63.535 34 61.5 33.156 60 31.657L53.657 25.314C51.781 23.438 49.237 22.385 46.586 22.385L22 24Z"
+        fill="url(#backFolderGradComp)"
+      />
+
+      {/* White Document / Files Sticking Out */}
+      <rect x="20" y="38" width="76" height="52" rx="4" fill="#E2E8F0" />
+      <rect x="22" y="39.5" width="72" height="49" rx="3" fill="#FFFFFF" />
+
+      {/* Subtle Inner Spine / Shadow */}
+      <path
+        d="M12 40V96C12 101.523 16.477 106 22 106H25V34H22C16.477 34 12 38.477 12 44V40Z"
+        fill="#CB7F00"
+        opacity="0.4"
+      />
+
+      {/* Front Folder Flap (Open perspective) */}
+      <g filter="url(#folderShadowComp)">
+        <path
+          d="M13.2 101.2C12.4 98.8 13 95.8 14.1 91.8L25.6 52.4C27 47.6 31.4 44.2 36.4 44.2H66.8C69.3 44.2 71.7 43.1 73.3 41.2L77.6 36.1C79.7 33.6 82.8 32.2 86.1 32.2H110.2C115.8 32.2 119.8 37.5 118.4 42.9L106.1 94.6C104.9 99.7 100.4 103.3 95.1 103.3H20.4C16.7 103.3 13.9 102.7 13.2 101.2Z"
+          fill="url(#frontFlapGradComp)"
+        />
+      </g>
+    </svg>
+  );
+}
