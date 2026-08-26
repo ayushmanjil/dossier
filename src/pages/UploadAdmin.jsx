@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useApplicationsStore } from "../context/ApplicationsContext";
 import { useDepartmentSummaries } from "../hooks/useRecruitmentData";
 import { useAuth } from "../context/AuthContext";
+import { exportAllApplicantsToCsv } from "../lib/exportCsv";
 import UploadDropzone from "../components/UploadDropzone";
 import AdminGate from "../components/AdminGate";
 
@@ -27,7 +28,23 @@ export default function UploadAdmin() {
   const departmentSummaries = useDepartmentSummaries();
   const [fileError, setFileError] = useState(null);
   const [result, setResult] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState(false);
   const navigate = useNavigate();
+
+  async function handleExport() {
+    setExporting(true);
+    setExportSuccess(false);
+    try {
+      await exportAllApplicantsToCsv(applications);
+      setExportSuccess(true);
+      setTimeout(() => setExportSuccess(false), 3000);
+    } catch (err) {
+      alert("Failed to export CSV: " + (err.message || err));
+    } finally {
+      setExporting(false);
+    }
+  }
 
   // Wipe Modal State
   const [showWipeModal, setShowWipeModal] = useState(false);
@@ -94,6 +111,17 @@ export default function UploadAdmin() {
           </div>
 
           <div className="flex items-center gap-3">
+            {totalCount > 0 && (
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                className="flex items-center gap-1.5 rounded-md border border-line bg-paper-raised px-3.5 py-1.5 font-mono text-xs uppercase tracking-wide text-ink-soft hover:border-oxblood hover:text-oxblood transition-colors cursor-pointer disabled:opacity-50"
+                title="Export complete applicant archive, scores, and questions"
+              >
+                <span>↓</span>
+                <span>{exporting ? "Exporting…" : exportSuccess ? "✓ Exported" : "Export CSV"}</span>
+              </button>
+            )}
             <Link
               to="/admin/interviewers"
               className="rounded-md border border-line bg-paper-raised px-3.5 py-1.5 font-mono text-xs uppercase tracking-wide text-ink-soft hover:border-oxblood hover:text-oxblood transition-colors"

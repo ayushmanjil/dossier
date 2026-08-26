@@ -119,7 +119,7 @@ export default function ManageInterviewers() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Ayush Manjil"
+                  placeholder="Full name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-oxblood focus:outline-none"
@@ -133,7 +133,7 @@ export default function ManageInterviewers() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. ayushmanjil"
+                  placeholder="Username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-oxblood focus:outline-none"

@@ -205,7 +205,7 @@ export default function RightPaneEvaluations({ applicantId }) {
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Domain knowledge, attitude, answers…"
+                  placeholder="Add evaluation notes..."
                   value={comments}
                   onChange={(e) => setComments(e.target.value)}
                   className="w-full rounded border border-line bg-paper px-2.5 py-1.5 text-xs text-ink placeholder:text-ink-faint focus:border-oxblood focus:outline-none leading-relaxed"

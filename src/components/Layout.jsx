@@ -99,7 +99,7 @@ export default function Layout({ children }) {
           <div className="mx-auto max-w-6xl px-6 flex items-center justify-between font-mono text-[0.68rem] uppercase tracking-[0.14em] text-ink-faint">
             <div className="flex items-center gap-2.5">
               <DossierLogo size={18} className="opacity-75" />
-              <span>Sahityika Recruitment Archive · Confidential Society Dossier</span>
+              <span>Dossier · Confidential Recruitment Archive</span>
             </div>
           </div>
         </footer>

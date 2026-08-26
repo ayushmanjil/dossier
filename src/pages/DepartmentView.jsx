@@ -122,7 +122,7 @@ export default function DepartmentView() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search applicants by name, roll number, degree, house…"
+            placeholder="Search applicants…"
             className="w-full rounded-lg border border-line bg-paper-raised px-4 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-oxblood focus:outline-none shadow-xs"
           />
         </div>
