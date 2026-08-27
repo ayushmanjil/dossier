@@ -2,6 +2,21 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+function formatDate(val) {
+  if (!val) return null;
+  try {
+    const d = typeof val?.toDate === "function"
+      ? val.toDate()
+      : val?.seconds != null
+      ? new Date(val.seconds * 1000)
+      : new Date(val);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleDateString();
+  } catch {
+    return null;
+  }
+}
+
 export default function ManageInterviewers() {
   const { createInterviewer, getInterviewers, deleteInterviewer, updateInterviewerPassword } = useAuth();
   const [interviewers, setInterviewers] = useState([]);
@@ -226,9 +241,9 @@ export default function ManageInterviewers() {
                         </div>
                         <div className="mt-1 flex items-center gap-3 font-mono text-xs text-ink-soft">
                           <span>Username: <strong className="text-ink font-semibold">{u.username}</strong></span>
-                          {u.createdAt && (
+                          {formatDate(u.createdAt) && (
                             <span className="text-ink-faint">
-                              · Added {new Date(u.createdAt).toLocaleDateString()}
+                              · Added {formatDate(u.createdAt)}
                             </span>
                           )}
                         </div>

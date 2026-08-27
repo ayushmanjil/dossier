@@ -163,7 +163,18 @@ export default function UploadAdmin() {
 
           {importMeta?.importedAt && (
             <p className="mt-3 text-right font-mono text-[0.65rem] uppercase tracking-wide text-ink-faint">
-              Last import: {typeof importMeta.importedAt === "string" ? new Date(importMeta.importedAt).toLocaleString() : "Recently"}
+              Last import: {(() => {
+                try {
+                  const val = importMeta.importedAt;
+                  const d = typeof val?.toDate === "function"
+                    ? val.toDate()
+                    : val?.seconds != null
+                    ? new Date(val.seconds * 1000)
+                    : new Date(val);
+                  if (!isNaN(d.getTime())) return d.toLocaleString();
+                } catch {}
+                return "Recently";
+              })()}
             </p>
           )}
         </div>

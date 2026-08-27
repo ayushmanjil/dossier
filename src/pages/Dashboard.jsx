@@ -62,9 +62,18 @@ export default function Dashboard() {
           {importMeta?.importedAt && (
             <p className="mt-2 font-mono text-[0.68rem] uppercase tracking-wide text-ink-faint">
               Last imported{" "}
-              {typeof importMeta.importedAt === "string"
-                ? new Date(importMeta.importedAt).toLocaleString()
-                : "recently"}
+              {(() => {
+                try {
+                  const val = importMeta.importedAt;
+                  const d = typeof val?.toDate === "function"
+                    ? val.toDate()
+                    : val?.seconds != null
+                    ? new Date(val.seconds * 1000)
+                    : new Date(val);
+                  if (!isNaN(d.getTime())) return d.toLocaleString();
+                } catch {}
+                return "recently";
+              })()}
             </p>
           )}
         </div>
