@@ -16,6 +16,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { auth, db, isFirebaseConfigured } from "../lib/firebase";
+import { deleteEvaluationsByInterviewer } from "../lib/store";
 
 const AuthContext = createContext(null);
 
@@ -303,6 +304,12 @@ export function AuthProvider({ children }) {
   }
 
   async function deleteInterviewer(id) {
+    try {
+      await deleteEvaluationsByInterviewer(id);
+    } catch (e) {
+      console.warn("Could not clean up interviewer evaluations:", e);
+    }
+
     if (!isFirebaseConfigured) {
       const users = getStoredLocalUsers();
       const updated = users.filter((u) => u.id !== id);

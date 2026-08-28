@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   getDocs,
+  deleteDoc,
   writeBatch,
   query,
   orderBy,
@@ -22,7 +23,8 @@ import { db, isFirebaseConfigured } from "./firebase";
  * Firestore layout (when configured):
  *   applications/{applicantId}        one doc per applicant, flattened
  *   meta/lastImport                   { summary, importedAt }
- *   evaluations/{applicantId}_{interviewerId}   <- FUTURE, see saveEvaluation()
+ *   evaluations/{applicantId}_{interviewerId}   interviewer evaluations & ratings
+ *   selected_candidates/{applicantId} shortlisted candidates
  *
  * When Firebase isn't configured yet, everything falls back to
  * localStorage under the same shape, so the module is fully demo-able
@@ -32,6 +34,21 @@ import { db, isFirebaseConfigured } from "./firebase";
 const LS_APPLICATIONS_KEY = "sahityika_recruitment_applications_v1";
 const LS_META_KEY = "sahityika_recruitment_meta_v1";
 const LS_EVALUATIONS_KEY = "sahityika_recruitment_evaluations_v1";
+const LS_SELECTED_KEY = "sahityika_selected_candidates_v1";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+async function deleteCollectionDocs(collectionName) {
+  const existing = await getDocs(collection(db, collectionName));
+  const deleteBatches = chunk(existing.docs, 400);
+  for (const batchDocs of deleteBatches) {
+    const b = writeBatch(db);
+    batchDocs.forEach((d) => b.delete(d.ref));
+    await b.commit();
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Applications
@@ -40,13 +57,7 @@ const LS_EVALUATIONS_KEY = "sahityika_recruitment_evaluations_v1";
 export async function replaceAllApplications(applications, summary) {
   if (isFirebaseConfigured) {
     // Clear existing docs, then write the new set in batches of 400.
-    const existing = await getDocs(collection(db, "applications"));
-    const deleteBatches = chunk(existing.docs, 400);
-    for (const batchDocs of deleteBatches) {
-      const b = writeBatch(db);
-      batchDocs.forEach((d) => b.delete(d.ref));
-      await b.commit();
-    }
+    await deleteCollectionDocs("applications");
 
     const writeBatches = chunk(applications, 400);
     for (const group of writeBatches) {
@@ -92,10 +103,18 @@ export async function getLastImportMeta() {
 
 export async function clearAllApplications() {
   if (isFirebaseConfigured) {
-    await replaceAllApplications([], { importedCount: 0, departmentCounts: {} });
+    // Thoroughly wipe all application data, evaluations, selections, and meta from Firestore
+    await Promise.all([
+      deleteCollectionDocs("applications"),
+      deleteCollectionDocs("evaluations"),
+      deleteCollectionDocs("selected_candidates"),
+      deleteCollectionDocs("meta"),
+    ]);
   } else {
     localStorage.removeItem(LS_APPLICATIONS_KEY);
     localStorage.removeItem(LS_META_KEY);
+    localStorage.removeItem(LS_EVALUATIONS_KEY);
+    localStorage.removeItem(LS_SELECTED_KEY);
   }
 }
 
@@ -107,8 +126,6 @@ export async function clearAllApplications() {
 // An evaluation is keyed by (applicantId, interviewerId) so each interviewer
 // can have exactly one rating per applicant, editable, with the applicant's
 // average computable client-side from all evaluation docs for that id.
-
-const LS_SELECTED_KEY = "sahityika_selected_candidates_v1";
 
 export async function saveEvaluation({ applicantId, interviewerId, interviewerName, rating, comments }) {
   const record = {
@@ -158,6 +175,36 @@ export async function getAllEvaluations() {
   const raw = localStorage.getItem(LS_EVALUATIONS_KEY);
   const all = raw ? JSON.parse(raw) : {};
   return Object.values(all);
+}
+
+export async function deleteEvaluationsByInterviewer(interviewerId) {
+  if (!interviewerId) return;
+  if (isFirebaseConfigured) {
+    const snap = await getDocs(collection(db, "evaluations"));
+    const toDelete = snap.docs.filter((d) => d.data()?.interviewerId === interviewerId);
+    const batches = chunk(toDelete, 400);
+    for (const group of batches) {
+      const b = writeBatch(db);
+      group.forEach((d) => b.delete(d.ref));
+      await b.commit();
+    }
+  } else {
+    const raw = localStorage.getItem(LS_EVALUATIONS_KEY);
+    if (!raw) return;
+    try {
+      const all = JSON.parse(raw);
+      let changed = false;
+      for (const key of Object.keys(all)) {
+        if (all[key]?.interviewerId === interviewerId) {
+          delete all[key];
+          changed = true;
+        }
+      }
+      if (changed) {
+        localStorage.setItem(LS_EVALUATIONS_KEY, JSON.stringify(all));
+      }
+    } catch {}
+  }
 }
 
 // ---------------------------------------------------------------------------
