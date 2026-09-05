@@ -241,19 +241,25 @@ export function importCsv(csvText) {
         }
       }
 
-      if (!rawAnswer && q.optional) continue; // don't render empty optional fields (e.g. resume not submitted)
       const { prose, links } = extractLinks(rawAnswer);
       if (links.length) {
-        links.forEach((l) => allLinks.push({ ...l, sourceQuestion: q.label }));
+        links.forEach((l) => {
+          const enrichedLink = { ...l, sourceQuestion: q.label };
+          if (q.type === "resume") {
+            enrichedLink.type = "resume";
+          }
+          allLinks.push(enrichedLink);
+        });
       }
       departmentAnswers.push({
         key: q.key,
         label: q.label,
         question: q.prompt || q.match[0] || q.label,
         type: q.type,
-        rawAnswer,
-        prose,
-        links,
+        rawAnswer: rawAnswer || "",
+        prose: prose || rawAnswer || "",
+        links: links || [],
+        optional: Boolean(q.optional),
       });
     }
 

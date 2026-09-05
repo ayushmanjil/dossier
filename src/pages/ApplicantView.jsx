@@ -58,20 +58,61 @@ export default function ApplicantView() {
   const submitted = formatTimestamp(timestamp);
   const selected = isSelected(applicant.applicantId);
 
-  // Fallback question enrichment from deptConfig
-  const configQuestionsMap = new Map((deptConfig?.questions || []).map((q) => [q.key, q]));
+  // Ensure every question belonging to this candidate's department is included in exact order
+  const deptQuestions = deptConfig?.questions || [];
+  const existingAnswersByKey = new Map((departmentAnswers || []).map((q) => [q.key, q]));
+  const existingAnswersByPrompt = new Map(
+    (departmentAnswers || [])
+      .filter((q) => q.question)
+      .map((q) => [q.question.trim().toLowerCase(), q])
+  );
 
-  const enrichedAnswers = departmentAnswers
-    .map((q) => {
-      const cfg = configQuestionsMap.get(q.key);
-      return {
-        ...q,
-        label: q.label || cfg?.label || "Question",
-        question: q.question || cfg?.prompt || cfg?.match?.[0] || q.label,
-        type: q.type || cfg?.type || "long",
-      };
-    })
-    .filter((q) => (q.prose && q.prose.trim()) || (q.links && q.links.length) || (q.rawAnswer && q.rawAnswer.trim()));
+  const enrichedAnswers = deptQuestions.map((cfg) => {
+    const existing =
+      existingAnswersByKey.get(cfg.key) ||
+      existingAnswersByPrompt.get((cfg.prompt || "").trim().toLowerCase()) ||
+      null;
+
+    let rawAnswer = existing?.rawAnswer ?? "";
+    let prose = existing?.prose ?? "";
+    let links = existing?.links ? [...existing.links] : [];
+
+    // Fallback if resume link exists in applicant.links but not yet in question
+    if (cfg.type === "resume" && (!links || links.length === 0) && !rawAnswer) {
+      const foundResume = (applicant.links || []).find((l) => l.type === "resume");
+      if (foundResume) {
+        links = [foundResume];
+        rawAnswer = foundResume.url;
+      }
+    }
+
+    return {
+      key: cfg.key,
+      label: cfg.label || existing?.label || "Question",
+      question: cfg.prompt || existing?.question || cfg.label,
+      type: cfg.type || existing?.type || "long",
+      rawAnswer,
+      prose: prose || rawAnswer,
+      links,
+      optional: Boolean(cfg.optional),
+    };
+  });
+
+  // Preserve any additional department questions that might exist
+  const configuredKeys = new Set(deptQuestions.map((q) => q.key));
+  (departmentAnswers || []).forEach((q) => {
+    if (q.key && !configuredKeys.has(q.key)) {
+      enrichedAnswers.push({
+        key: q.key,
+        label: q.label || "Question",
+        question: q.question || q.label,
+        type: q.type || "long",
+        rawAnswer: q.rawAnswer || "",
+        prose: q.prose || q.rawAnswer || "",
+        links: q.links || [],
+      });
+    }
+  });
 
   // Next / Previous applicant in this department
   const currentIndex = deptApplicants.findIndex((a) => a.applicantId === applicant.applicantId);

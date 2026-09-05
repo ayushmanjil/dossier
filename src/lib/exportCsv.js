@@ -99,7 +99,7 @@ export async function exportAllApplicantsToCsv(applications) {
     // Department-specific questions mapping
     const answersMap = {};
     (app.departmentAnswers || []).forEach((ans) => {
-      answersMap[ans.key] = ans.value;
+      answersMap[ans.key] = ans.rawAnswer || ans.prose || ans.value || "";
     });
 
     allDeptQuestions.forEach((q) => {

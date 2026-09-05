@@ -30,8 +30,6 @@ export default function AnswerBlock({ question, index, totalQuestions }) {
   const hasLinks = Boolean(links && links.length > 0);
   const hasRaw = Boolean(rawAnswer && rawAnswer.trim().length > 0);
 
-  if (!hasProse && !hasLinks && !hasRaw) return null;
-
   const isFeature = type === "feature";
   const isResume = type === "resume";
   const isUrlOnly = type === "url" && !hasProse;
@@ -88,15 +86,23 @@ export default function AnswerBlock({ question, index, totalQuestions }) {
               links.map((l, i) => (
                 <LinkButton key={i} label="Open Submitted Résumé" url={l.url} tone="forest" />
               ))
+            ) : hasRaw ? (
+              <p className="text-sm text-ink leading-relaxed font-sans">{rawAnswer}</p>
             ) : (
               <span className="text-sm italic text-ink-faint">No résumé link submitted.</span>
             )}
           </div>
         ) : isUrlOnly ? (
           <div className="flex flex-wrap gap-2.5 py-1">
-            {links.map((l, i) => (
-              <LinkButton key={i} label={l.label || "Open Link"} url={l.url} tone="oxblood" />
-            ))}
+            {hasLinks ? (
+              links.map((l, i) => (
+                <LinkButton key={i} label={l.label || "Open Link"} url={l.url} tone="oxblood" />
+              ))
+            ) : hasRaw ? (
+              <p className="text-sm text-ink leading-relaxed font-sans">{rawAnswer}</p>
+            ) : (
+              <span className="text-sm italic text-ink-faint">No link provided.</span>
+            )}
           </div>
         ) : (
           <>
@@ -114,11 +120,15 @@ export default function AnswerBlock({ question, index, totalQuestions }) {
                 ))}
               </div>
             )}
-          </>
-        )}
 
-        {!hasProse && !hasLinks && rawAnswer && (
-          <p className="text-sm text-ink leading-relaxed font-sans">{rawAnswer}</p>
+            {!hasProse && !hasLinks && (
+              rawAnswer ? (
+                <p className="text-sm text-ink leading-relaxed font-sans">{rawAnswer}</p>
+              ) : (
+                <span className="text-sm italic text-ink-faint">No response provided.</span>
+              )
+            )}
+          </>
         )}
       </div>
     </div>

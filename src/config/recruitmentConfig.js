@@ -288,6 +288,13 @@ export const DEPARTMENTS = [
         type: "resume",
         optional: true,
       },
+      {
+        key: "videoEditingExperience",
+        label: "Video Editing Experience",
+        prompt: "How experienced are you with video editing?",
+        match: ["How experienced are you with video editing?"],
+        type: "long",
+      },
     ],
   },
   {
@@ -354,6 +361,16 @@ export const DEPARTMENTS = [
         type: "resume",
         optional: true,
       },
+      {
+        key: "socialMediaAudit",
+        label: "Social Media Strategy & Outreach",
+        prompt: "After reviewing the society’s social media handles, what changes, ideas, or strategies would you suggest to improve our content, audience engagement, media presence, and overall outreach?",
+        match: [
+          "After reviewing the society\u2019s social media handles, what changes, ideas, or strategies would you suggest to improve our content, audience engagement, media presence, and overall outreach?",
+          "After reviewing the society's social media handles, what changes, ideas, or strategies would you suggest to improve our content, audience engagement, media presence, and overall outreach?",
+        ],
+        type: "long",
+      },
     ],
   },
 ];
@@ -373,19 +390,6 @@ export const PENDING_QUESTIONS = [
     key: "declaration",
     label: "Declaration",
     match: ["I hereby declare that :", "I hereby declare that:", "I hereby declare that"],
-  },
-  {
-    key: "videoEditingExperience",
-    label: "Video Editing Experience",
-    match: ["How experienced are you with video editing?"],
-  },
-  {
-    key: "socialMediaAudit",
-    label: "Social Media Improvement Suggestions",
-    match: [
-      "After reviewing the society\u2019s social media handles, what changes, ideas, or strategies would you suggest to improve our content, audience engagement, media presence, and overall outreach?",
-      "After reviewing the society's social media handles, what changes, ideas, or strategies would you suggest to improve our content, audience engagement, media presence, and overall outreach?",
-    ],
   },
 ];
 
