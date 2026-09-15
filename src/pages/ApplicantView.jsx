@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { useApplicant, useDepartmentConfig, useApplicantsByDepartment, useSelectionManager } from "../hooks/useRecruitmentData";
+import { useApplicant, useDepartmentConfig, useAllApplicantsByDepartment, useSelectionManager, useShortlistManager } from "../hooks/useRecruitmentData";
 import { useApplicationsStore } from "../context/ApplicationsContext";
 import { useAuth } from "../context/AuthContext";
 import AnswerBlock from "../components/AnswerBlock";
@@ -21,9 +21,11 @@ export default function ApplicantView() {
   const { loading } = useApplicationsStore();
   const { isAdmin } = useAuth();
   const { isSelected, toggleSelect } = useSelectionManager();
+  const { isShortlisted, toggleShortlist } = useShortlistManager();
   const applicant = useApplicant(id);
   const deptConfig = useDepartmentConfig(applicant?.department);
-  const deptApplicants = useApplicantsByDepartment(applicant?.department || "");
+  // Always use unfiltered list for prev/next navigation
+  const deptApplicants = useAllApplicantsByDepartment(applicant?.department || "");
 
   if (loading) {
     return (
@@ -196,19 +198,41 @@ export default function ApplicantView() {
                 )}
               </div>
 
+{/* Shortlist for Interview button (Admin) */}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => toggleShortlist(applicant.applicantId)}
+                  title={isShortlisted(applicant.applicantId) ? "Remove from Interview Shortlist" : "Shortlist for Interview"}
+                  className={`rounded px-2 py-0.5 font-mono text-[0.58rem] uppercase font-bold tracking-wider transition-colors ${
+                    isShortlisted(applicant.applicantId)
+                      ? "bg-oxblood text-paper-raised"
+                      : "border border-line bg-paper text-ink-soft hover:border-oxblood hover:text-oxblood"
+                  }`}
+                >
+                  {isShortlisted(applicant.applicantId) ? "★ Shortlisted" : "★ Shortlist"}
+                </button>
+              )}
+              {/* Final membership selection (Admin) */}
               {isAdmin && (
                 <button
                   type="button"
                   onClick={() => toggleSelect(applicant.applicantId)}
-                  title={selected ? "Remove from Selected Candidates" : "Mark as Selected Candidate"}
+                  title={selected ? "Remove from Selected Members" : "Mark as Selected Member"}
                   className={`rounded px-2 py-0.5 font-mono text-[0.58rem] uppercase font-bold tracking-wider transition-colors ${
                     selected
                       ? "bg-forest text-paper-raised"
                       : "border border-line bg-paper text-ink-soft hover:border-forest hover:text-forest"
                   }`}
                 >
-                  {selected ? "✓ Selected" : "+ Select"}
+                  {selected ? "✓ Member" : "+ Member"}
                 </button>
+              )}
+              {/* Shortlisted indicator (Interviewer view) */}
+              {!isAdmin && isShortlisted(applicant.applicantId) && (
+                <span className="rounded bg-oxblood/10 px-2 py-0.5 font-mono text-[0.55rem] uppercase font-bold tracking-wider text-oxblood border border-oxblood/25">
+                  ★ Shortlisted
+                </span>
               )}
             </div>
 
@@ -326,7 +350,11 @@ export default function ApplicantView() {
         {/* RIGHT PANE: Evaluations (Fixed inside height, no scrollbar) */}
         {/* ======================================================== */}
         <aside className="lg:col-span-3 h-full overflow-y-auto no-scrollbar">
-          <RightPaneEvaluations applicantId={applicant.applicantId} />
+          <RightPaneEvaluations
+            applicantId={applicant.applicantId}
+            isShortlisted={isShortlisted(applicant.applicantId)}
+            onShortlist={isAdmin ? () => toggleShortlist(applicant.applicantId) : null}
+          />
         </aside>
       </div>
     </div>

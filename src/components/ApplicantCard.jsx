@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import GlyphBar from "./GlyphBar";
 
-export default function ApplicantCard({ applicant, evalData, isSelected }) {
+export default function ApplicantCard({ applicant, evalData, isSelected, isShortlisted, showShortlistBadge }) {
   const { name, rollNumber, commonAnswers } = applicant;
   const initial = name?.trim()?.[0]?.toUpperCase() || "?";
 
@@ -13,7 +13,11 @@ export default function ApplicantCard({ applicant, evalData, isSelected }) {
     <Link
       to={`/applicant/${applicant.applicantId}`}
       className={`group relative flex items-center justify-between rounded-xl border bg-paper-raised p-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lifted ${
-        isSelected ? "border-forest/60 bg-forest/[0.03]" : "border-line/70 hover:border-oxblood/40"
+        isSelected
+          ? "border-forest/60 bg-forest/[0.03]"
+          : isShortlisted
+          ? "border-oxblood/40 bg-oxblood/[0.02]"
+          : "border-line/70 hover:border-oxblood/40"
       }`}
     >
       <div className="flex min-w-0 flex-1 items-center gap-3.5">
@@ -21,6 +25,8 @@ export default function ApplicantCard({ applicant, evalData, isSelected }) {
           className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border font-display text-base font-bold transition-colors ${
             isSelected
               ? "border-forest bg-forest/10 text-forest"
+              : isShortlisted
+              ? "border-oxblood/60 bg-oxblood/10 text-oxblood"
               : "border-line bg-paper text-ink-soft group-hover:border-oxblood/40 group-hover:text-oxblood"
           }`}
         >
@@ -28,13 +34,18 @@ export default function ApplicantCard({ applicant, evalData, isSelected }) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <p className="truncate font-display text-base font-bold text-ink group-hover:text-oxblood transition-colors">
               {name}
             </p>
             {isSelected && (
-              <span className="rounded bg-forest/15 px-1.5 py-0.2 font-mono text-[0.55rem] font-bold uppercase text-forest">
-                Selected
+              <span className="rounded bg-forest/15 px-1.5 py-0.5 font-mono text-[0.55rem] font-bold uppercase text-forest border border-forest/20">
+                ✓ Selected
+              </span>
+            )}
+            {showShortlistBadge && isShortlisted && !isSelected && (
+              <span className="rounded bg-oxblood/10 px-1.5 py-0.5 font-mono text-[0.55rem] font-bold uppercase text-oxblood border border-oxblood/25">
+                ★ Shortlisted
               </span>
             )}
           </div>

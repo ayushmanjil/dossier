@@ -45,6 +45,15 @@ export default function Layout({ children }) {
                 )}
               </Link>
 
+              <Link
+                to="/team"
+                className={`transition-colors hover:text-oxblood ${
+                  location.pathname === "/team" ? "text-oxblood" : "text-ink-soft"
+                }`}
+              >
+                Team
+              </Link>
+
               {isAdmin && (
                 <>
                   <Link

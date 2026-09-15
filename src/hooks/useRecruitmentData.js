@@ -3,8 +3,6 @@ import { useApplicationsStore } from "../context/ApplicationsContext";
 import { DEPARTMENTS, UNKNOWN_DEPARTMENT, getDepartmentBySlug } from "../config/recruitmentConfig";
 import {
   getAllEvaluations,
-  getSelectedCandidateIds,
-  toggleCandidateSelection,
 } from "../lib/store";
 
 function normalizeSlug(slug) {
@@ -21,11 +19,16 @@ function normalizeSlug(slug) {
 
 /** Dashboard-level: one card per department, counts computed live. */
 export function useDepartmentSummaries() {
-  const { applications } = useApplicationsStore();
+  const { applications, shortlistedIds, candidateFilter } = useApplicationsStore();
 
   return useMemo(() => {
+    const filtered =
+      candidateFilter === "shortlisted"
+        ? applications.filter((a) => shortlistedIds.has(a.applicantId))
+        : applications;
+
     const counts = new Map();
-    for (const app of applications) {
+    for (const app of filtered) {
       const canonicalSlug = normalizeSlug(app.department);
       counts.set(canonicalSlug, (counts.get(canonicalSlug) || 0) + 1);
     }
@@ -49,10 +52,23 @@ export function useDepartmentSummaries() {
     }
 
     return configured;
-  }, [applications]);
+  }, [applications, shortlistedIds, candidateFilter]);
 }
 
 export function useApplicantsByDepartment(slug) {
+  const { applications, shortlistedIds, candidateFilter } = useApplicationsStore();
+  const targetSlug = normalizeSlug(slug);
+  return useMemo(() => {
+    const base = applications.filter((a) => normalizeSlug(a.department) === targetSlug);
+    if (candidateFilter === "shortlisted") {
+      return base.filter((a) => shortlistedIds.has(a.applicantId));
+    }
+    return base;
+  }, [applications, shortlistedIds, candidateFilter, targetSlug]);
+}
+
+/** Returns all applicants for a dept regardless of filter (used for nav/prev-next) */
+export function useAllApplicantsByDepartment(slug) {
   const { applications } = useApplicationsStore();
   const targetSlug = normalizeSlug(slug);
   return useMemo(
@@ -141,5 +157,51 @@ export function useSelectionManager() {
     selectedApplicants,
     loading,
     refresh,
+  };
+}
+
+/** Manages shortlisting for interviews */
+export function useShortlistManager() {
+  const {
+    shortlistedIds,
+    shortlistedApplicants,
+    shortlistedCount,
+    isShortlisted,
+    toggleShortlist,
+    loading,
+  } = useApplicationsStore();
+
+  return {
+    shortlistedIds,
+    shortlistedCount,
+    isShortlisted,
+    toggleShortlist,
+    shortlistedApplicants,
+    loading,
+  };
+}
+
+/** Hook for a single dept's current team + new recruits */
+export function useDepartmentTeam(slug) {
+  const { departmentTeams, selectedApplicants, saveTeam } = useApplicationsStore();
+  const team = departmentTeams[slug] || { deptHead: null, members: [] };
+
+  // Selected applicants who belong to this department
+  const newRecruits = useMemo(
+    () =>
+      selectedApplicants.filter(
+        (a) => normalizeSlug(a.department) === normalizeSlug(slug)
+      ),
+    [selectedApplicants, slug]
+  );
+
+  const memberLimitReached = (team.members || []).length >= 12;
+
+  return {
+    deptHead: team.deptHead || null,
+    members: team.members || [],
+    newRecruits,
+    memberLimitReached,
+    saveTeam: (data) => saveTeam(slug, data),
   };
 }

@@ -6,8 +6,39 @@ import { exportAllApplicantsToCsv } from "../lib/exportCsv";
 import DepartmentCard from "../components/DepartmentCard";
 import EmptyState from "../components/EmptyState";
 
+function CandidateFilterToggle({ value, onChange }) {
+  return (
+    <div className="flex items-center gap-1 rounded-lg border border-line bg-paper-raised p-1 shadow-xs">
+      {[
+        { key: "all", label: "All Candidates" },
+        { key: "shortlisted", label: "★ Shortlisted for Interview" },
+      ].map((opt) => (
+        <label
+          key={opt.key}
+          className={`flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider transition-all select-none ${
+            value === opt.key
+              ? "bg-oxblood text-paper-raised shadow-xs"
+              : "text-ink-soft hover:text-ink"
+          }`}
+        >
+          <input
+            type="radio"
+            name="candidateFilter"
+            value={opt.key}
+            checked={value === opt.key}
+            onChange={() => onChange(opt.key)}
+            className="sr-only"
+          />
+          {opt.label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
 export default function Dashboard() {
-  const { applications, loading, importMeta } = useApplicationsStore();
+  const { applications, loading, importMeta, candidateFilter, setCandidateFilter, shortlistedCount } =
+    useApplicationsStore();
   const { isAdmin } = useAuth();
   const departments = useDepartmentSummaries();
   const [exporting, setExporting] = useState(false);
@@ -44,6 +75,7 @@ export default function Dashboard() {
   }
 
   const total = applications.length;
+  const isShowingShortlisted = candidateFilter === "shortlisted";
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 py-10">
@@ -56,8 +88,18 @@ export default function Dashboard() {
             Sahityika Recruitment Drive 2026
           </h1>
           <p className="mt-3 text-base text-ink-soft max-w-3xl">
-            {total} {total === 1 ? "application has" : "applications have"} been sorted across{" "}
-            {departments.filter((d) => !d.isUnassigned).length} departments. Select a department to evaluate candidate dossiers.
+            {isShowingShortlisted ? (
+              <>
+                <span className="font-semibold text-oxblood">{shortlistedCount}</span>{" "}
+                {shortlistedCount === 1 ? "candidate" : "candidates"} shortlisted for interview across{" "}
+                {departments.filter((d) => !d.isUnassigned && d.count > 0).length} departments.
+              </>
+            ) : (
+              <>
+                {total} {total === 1 ? "application has" : "applications have"} been sorted across{" "}
+                {departments.filter((d) => !d.isUnassigned).length} departments. Select a department to evaluate candidate dossiers.
+              </>
+            )}
           </p>
           {importMeta?.importedAt && (
             <p className="mt-2 font-mono text-[0.68rem] uppercase tracking-wide text-ink-faint">
@@ -78,9 +120,13 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Admin Action Controls */}
-        {isAdmin && (
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+        {/* Controls */}
+        <div className="flex flex-col items-end gap-3 shrink-0">
+          {/* Radio Filter (visible to all) */}
+          <CandidateFilterToggle value={candidateFilter} onChange={setCandidateFilter} />
+
+          {/* Admin Action Controls */}
+          {isAdmin && (
             <button
               onClick={handleExport}
               disabled={exporting}
@@ -90,15 +136,36 @@ export default function Dashboard() {
               <span>↓</span>
               <span>{exporting ? "Generating CSV…" : exportSuccess ? "✓ Exported" : "Export Archive CSV"}</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {departments.map((dept, i) => (
-          <DepartmentCard key={dept.slug} department={dept} index={i} />
-        ))}
-      </div>
+      {/* Empty shortlisted state */}
+      {isShowingShortlisted && shortlistedCount === 0 ? (
+        <div className="mt-4 rounded-xl border border-dashed border-brass/50 bg-paper-raised p-12 text-center shadow-card">
+          <p className="font-display text-lg font-semibold text-ink">No candidates shortlisted for interview yet</p>
+          <p className="mt-2 max-w-md mx-auto text-xs text-ink-soft">
+            Admins can shortlist candidates for interviews from their individual dossier view.{" "}
+            <button
+              onClick={() => setCandidateFilter("all")}
+              className="text-oxblood underline underline-offset-2 hover:text-oxblood-deep"
+            >
+              Show all candidates
+            </button>
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {departments.map((dept, i) => (
+            <DepartmentCard
+              key={dept.slug}
+              department={dept}
+              index={i}
+              isFilterActive={isShowingShortlisted}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -7,6 +7,10 @@ import {
   clearAllApplications,
   getSelectedCandidateIds,
   toggleCandidateSelection,
+  getShortlistedCandidateIds,
+  toggleCandidateShortlist,
+  getDepartmentTeams,
+  saveDepartmentTeam,
 } from "../lib/store";
 
 const ApplicationsContext = createContext(null);
@@ -18,20 +22,42 @@ export function ApplicationsProvider({ children }) {
   const [importing, setImporting] = useState(false);
   const [lastImportSummary, setLastImportSummary] = useState(null);
 
-  // Global Selection State
+  // Global Selection State (final membership)
   const [selectedIds, setSelectedIds] = useState(new Set());
+
+  // Shortlisted for Interview
+  const [shortlistedIds, setShortlistedIds] = useState(new Set());
+
+  // Candidate list filter: "all" | "shortlisted"
+  const [candidateFilter, setCandidateFilter] = useState("all");
+
+  // Department Teams
+  const [departmentTeams, setDepartmentTeams] = useState({});
+
+  const refreshTeams = useCallback(async () => {
+    try {
+      const teams = await getDepartmentTeams();
+      setDepartmentTeams(teams || {});
+    } catch (err) {
+      console.error("Failed to load department teams:", err);
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const [apps, meta, selIds] = await Promise.all([
+      const [apps, meta, selIds, shortIds, teams] = await Promise.all([
         getAllApplications(),
         getLastImportMeta(),
         getSelectedCandidateIds(),
+        getShortlistedCandidateIds(),
+        getDepartmentTeams(),
       ]);
       setApplications(apps || []);
       setImportMeta(meta || null);
       setSelectedIds(new Set(selIds || []));
+      setShortlistedIds(new Set(shortIds || []));
+      setDepartmentTeams(teams || {});
     } finally {
       setLoading(false);
     }
@@ -70,9 +96,11 @@ export function ApplicationsProvider({ children }) {
     setImportMeta(null);
     setLastImportSummary(null);
     setSelectedIds(new Set());
+    setShortlistedIds(new Set());
     await refresh();
   }, [refresh]);
 
+  // Toggle final membership selection
   const toggleSelect = useCallback(
     async (applicantId) => {
       const isCurrentlySelected = selectedIds.has(applicantId);
@@ -88,9 +116,36 @@ export function ApplicationsProvider({ children }) {
     [selectedIds]
   );
 
+  // Toggle shortlist for interview
+  const toggleShortlist = useCallback(
+    async (applicantId) => {
+      const isCurrentlyShortlisted = shortlistedIds.has(applicantId);
+      const nextState = !isCurrentlyShortlisted;
+      await toggleCandidateShortlist(applicantId, nextState);
+      setShortlistedIds((prev) => {
+        const next = new Set(prev);
+        if (nextState) next.add(applicantId);
+        else next.delete(applicantId);
+        return next;
+      });
+    },
+    [shortlistedIds]
+  );
+
+  // Save a department team
+  const saveTeam = useCallback(async (deptSlug, teamData) => {
+    const saved = await saveDepartmentTeam(deptSlug, teamData);
+    setDepartmentTeams((prev) => ({ ...prev, [deptSlug]: saved }));
+    return saved;
+  }, []);
+
   const selectedApplicants = useMemo(() => {
     return applications.filter((a) => selectedIds.has(a.applicantId));
   }, [applications, selectedIds]);
+
+  const shortlistedApplicants = useMemo(() => {
+    return applications.filter((a) => shortlistedIds.has(a.applicantId));
+  }, [applications, shortlistedIds]);
 
   const value = useMemo(
     () => ({
@@ -102,12 +157,25 @@ export function ApplicationsProvider({ children }) {
       uploadCsv,
       clearData,
       refresh,
-      // Selections
+      // Final selection (membership)
       selectedIds,
       selectedApplicants,
       selectedCount: selectedApplicants.length,
       isSelected: (id) => selectedIds.has(id),
       toggleSelect,
+      // Interview shortlist
+      shortlistedIds,
+      shortlistedApplicants,
+      shortlistedCount: shortlistedApplicants.length,
+      isShortlisted: (id) => shortlistedIds.has(id),
+      toggleShortlist,
+      // Candidate filter
+      candidateFilter,
+      setCandidateFilter,
+      // Department teams
+      departmentTeams,
+      saveTeam,
+      refreshTeams,
     }),
     [
       applications,
@@ -121,6 +189,13 @@ export function ApplicationsProvider({ children }) {
       selectedIds,
       selectedApplicants,
       toggleSelect,
+      shortlistedIds,
+      shortlistedApplicants,
+      toggleShortlist,
+      candidateFilter,
+      departmentTeams,
+      saveTeam,
+      refreshTeams,
     ]
   );
 

@@ -1,12 +1,15 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
+  useAllApplicantsByDepartment,
   useApplicantsByDepartment,
   useDepartmentConfig,
   useEvaluationsMap,
   useSelectionManager,
+  useShortlistManager,
 } from "../hooks/useRecruitmentData";
 import { useApplicationsStore } from "../context/ApplicationsContext";
+import { useAuth } from "../context/AuthContext";
 import ApplicantCard from "../components/ApplicantCard";
 
 const SORT_OPTIONS = [
@@ -17,22 +20,55 @@ const SORT_OPTIONS = [
   { key: "recent", label: "Most Recently Submitted" },
 ];
 
+function CandidateFilterToggle({ value, onChange }) {
+  return (
+    <div className="flex items-center gap-1 rounded-lg border border-line bg-paper-raised p-1 shadow-xs shrink-0">
+      {[
+        { key: "all", label: "All" },
+        { key: "shortlisted", label: "★ Shortlisted" },
+      ].map((opt) => (
+        <label
+          key={opt.key}
+          className={`flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-[0.62rem] uppercase tracking-wider transition-all select-none ${
+            value === opt.key
+              ? "bg-oxblood text-paper-raised shadow-xs"
+              : "text-ink-soft hover:text-ink"
+          }`}
+        >
+          <input
+            type="radio"
+            name="deptCandidateFilter"
+            value={opt.key}
+            checked={value === opt.key}
+            onChange={() => onChange(opt.key)}
+            className="sr-only"
+          />
+          {opt.label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
 export default function DepartmentView() {
   const { slug } = useParams();
-  const { loading } = useApplicationsStore();
+  const { loading, candidateFilter, setCandidateFilter } = useApplicationsStore();
   const deptConfig = useDepartmentConfig(slug);
   const applicants = useApplicantsByDepartment(slug);
+  const allApplicants = useAllApplicantsByDepartment(slug);
   const { evalMap } = useEvaluationsMap();
   const { isSelected } = useSelectionManager();
+  const { isShortlisted } = useShortlistManager();
+  const { isAdmin } = useAuth();
 
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("name-asc");
   const [levelFilter, setLevelFilter] = useState("all");
 
   const levels = useMemo(() => {
-    const set = new Set(applicants.map((a) => a.commonAnswers?.level).filter(Boolean));
+    const set = new Set(allApplicants.map((a) => a.commonAnswers?.level).filter(Boolean));
     return Array.from(set).sort();
-  }, [applicants]);
+  }, [allApplicants]);
 
   const filtered = useMemo(() => {
     let list = applicants;
@@ -92,6 +128,8 @@ export default function DepartmentView() {
     );
   }
 
+  const isFilterActive = candidateFilter === "shortlisted";
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 py-8">
       {/* Top Breadcrumb & Department Header */}
@@ -108,9 +146,14 @@ export default function DepartmentView() {
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <CandidateFilterToggle value={candidateFilter} onChange={setCandidateFilter} />
           <span className="rounded-full bg-paper-raised px-4 py-1.5 font-mono text-xs uppercase tracking-wider text-ink border border-line shadow-xs">
-            {applicants.length} {applicants.length === 1 ? "Applicant" : "Applicants"}
+            {isFilterActive ? (
+              <>{applicants.length} {applicants.length === 1 ? "Shortlisted" : "Shortlisted"}</>
+            ) : (
+              <>{allApplicants.length} {allApplicants.length === 1 ? "Applicant" : "Applicants"}</>
+            )}
           </span>
         </div>
       </div>
@@ -122,7 +165,7 @@ export default function DepartmentView() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search applicants…"
+            placeholder={isFilterActive ? "Search shortlisted applicants…" : "Search applicants…"}
             className="w-full rounded-lg border border-line bg-paper-raised px-4 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-oxblood focus:outline-none shadow-xs"
           />
         </div>
@@ -157,8 +200,23 @@ export default function DepartmentView() {
         </div>
       </div>
 
-      {/* 3-Column Roster Grid (No Empty Margins) */}
-      {filtered.length === 0 ? (
+      {/* Shortlisted filter: empty state */}
+      {isFilterActive && applicants.length === 0 ? (
+        <div className="mt-8 rounded-xl border border-dashed border-brass/50 bg-paper-raised p-16 text-center text-ink-soft">
+          <p className="font-display text-lg font-semibold text-ink mb-2">
+            No shortlisted candidates in this department
+          </p>
+          <p className="text-xs">
+            Shortlist candidates for interviews from their individual dossier.{" "}
+            <button
+              onClick={() => setCandidateFilter("all")}
+              className="text-oxblood underline underline-offset-2"
+            >
+              Show all applicants
+            </button>
+          </p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="mt-8 rounded-xl border border-dashed border-line bg-paper-raised p-16 text-center text-ink-soft">
           No applicants match your search criteria.
         </div>
@@ -170,6 +228,8 @@ export default function DepartmentView() {
               applicant={a}
               evalData={evalMap.get(a.applicantId)}
               isSelected={isSelected(a.applicantId)}
+              isShortlisted={isShortlisted(a.applicantId)}
+              showShortlistBadge={true}
             />
           ))}
         </div>

@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { saveEvaluation, deleteEvaluation, getEvaluationsForApplicant } from "../lib/store";
 import GlyphBar, { GLYPH_LABELS, CAPSULE_PALETTE } from "./GlyphBar";
 
-export default function RightPaneEvaluations({ applicantId }) {
+export default function RightPaneEvaluations({ applicantId, isShortlisted = false, onShortlist = null }) {
   const { currentUser, isAdmin } = useAuth();
   const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -163,91 +163,115 @@ export default function RightPaneEvaluations({ applicantId }) {
         </div>
       </div>
 
-      {/* Interviewer Rating Action / Form */}
+      {/* Interviewer Rating Action / Form — gated behind shortlist */}
       {!isAdmin && (
         <div className="mt-3.5 border-b border-line/60 pb-3.5">
-          {!showRateForm ? (
-            <button
-              type="button"
-              onClick={() => setShowRateForm(true)}
-              className="w-full rounded-md border border-line bg-paper px-3 py-2 text-left font-mono text-xs text-ink-soft hover:border-oxblood hover:text-oxblood transition-colors flex items-center justify-between group"
-            >
-              <span>{hasMyEvaluation ? "✎ Edit Your Assessment" : "+ Rate This Candidate"}</span>
-              <span className="font-mono text-[0.65rem] text-brass uppercase font-bold">
-                {hasMyEvaluation ? "Rated" : "Rate"}
-              </span>
-            </button>
+          {!isShortlisted ? (
+            /* Ratings Gate: candidate not yet shortlisted for interview */
+            <div className="rounded-lg border border-brass/40 bg-brass/5 p-3 text-center space-y-2">
+              <p className="font-mono text-[0.62rem] uppercase tracking-wider text-brass font-bold">
+                🔒 Rating Locked
+              </p>
+              <p className="text-[0.7rem] text-ink-soft leading-relaxed">
+                Only candidates <span className="font-semibold text-ink">shortlisted for interview</span> can receive evaluations and ratings.
+              </p>
+              <p className="font-mono text-[0.58rem] text-ink-faint italic">
+                Ask an admin to shortlist this candidate.
+              </p>
+            </div>
           ) : (
-            <form onSubmit={handleSubmit} className="rounded-lg bg-paper/70 p-3 border border-line/70 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[0.62rem] uppercase tracking-wider text-ink-soft">
-                  Your Score:
+            /* Rating form — candidate is shortlisted */
+            <>
+              <div className="mb-2 flex items-center gap-1.5">
+                <span className="rounded bg-oxblood/10 px-1.5 py-0.5 font-mono text-[0.52rem] font-bold uppercase text-oxblood border border-oxblood/25">
+                  ★ Shortlisted
                 </span>
-                <span className="font-mono text-xs font-bold text-ink">
-                  {rating}/5
-                </span>
+                <span className="font-mono text-[0.58rem] text-ink-faint">Eligible for evaluation</span>
               </div>
-
-              {/* Interactive Capsule Bar */}
-              <div className="py-0.5 flex justify-center">
-                <GlyphBar
-                  value={rating}
-                  max={5}
-                  interactive={true}
-                  onChange={(val) => setRating(val)}
-                  size="md"
-                />
-              </div>
-
-              <div>
-                <label className="block font-mono text-[0.58rem] uppercase tracking-wider text-ink-faint mb-1">
-                  Feedback Note (Optional)
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Add evaluation notes..."
-                  value={comments}
-                  onChange={(e) => setComments(e.target.value)}
-                  className="w-full rounded border border-line bg-paper px-2.5 py-1.5 text-xs text-ink placeholder:text-ink-faint focus:border-oxblood focus:outline-none leading-relaxed"
-                />
-              </div>
-
-              {successMsg && (
-                <p className="font-mono text-[0.62rem] text-forest font-medium">
-                  ✓ {successMsg}
-                </p>
-              )}
-
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 rounded bg-oxblood px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-paper-raised hover:bg-oxblood-deep disabled:opacity-50"
-                >
-                  {submitting ? "Saving…" : "Save Rating"}
-                </button>
-
-                {hasMyEvaluation && (
-                  <button
-                    type="button"
-                    onClick={handleDeleteRating}
-                    disabled={submitting}
-                    title="Delete your evaluation"
-                    className="rounded border border-oxblood/40 bg-oxblood/10 px-2 py-1.5 font-mono text-[0.62rem] uppercase text-oxblood hover:bg-oxblood hover:text-white transition-colors"
-                  >
-                    Delete
-                  </button>
-                )}
-
+              {!showRateForm ? (
                 <button
                   type="button"
-                  onClick={() => setShowRateForm(false)}
-                  className="rounded border border-line px-2 py-1.5 font-mono text-[0.62rem] uppercase text-ink-soft hover:text-ink"
+                  onClick={() => setShowRateForm(true)}
+                  className="w-full rounded-md border border-line bg-paper px-3 py-2 text-left font-mono text-xs text-ink-soft hover:border-oxblood hover:text-oxblood transition-colors flex items-center justify-between group"
                 >
-                  Cancel
+                  <span>{hasMyEvaluation ? "✎ Edit Your Assessment" : "+ Rate This Candidate"}</span>
+                  <span className="font-mono text-[0.65rem] text-brass uppercase font-bold">
+                    {hasMyEvaluation ? "Rated" : "Rate"}
+                  </span>
                 </button>
-              </div>
-            </form>
+              ) : (
+                <form onSubmit={handleSubmit} className="rounded-lg bg-paper/70 p-3 border border-line/70 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[0.62rem] uppercase tracking-wider text-ink-soft">
+                      Your Score:
+                    </span>
+                    <span className="font-mono text-xs font-bold text-ink">
+                      {rating}/5
+                    </span>
+                  </div>
+
+                  {/* Interactive Capsule Bar */}
+                  <div className="py-0.5 flex justify-center">
+                    <GlyphBar
+                      value={rating}
+                      max={5}
+                      interactive={true}
+                      onChange={(val) => setRating(val)}
+                      size="md"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-mono text-[0.58rem] uppercase tracking-wider text-ink-faint mb-1">
+                      Feedback Note (Optional)
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="Add evaluation notes..."
+                      value={comments}
+                      onChange={(e) => setComments(e.target.value)}
+                      className="w-full rounded border border-line bg-paper px-2.5 py-1.5 text-xs text-ink placeholder:text-ink-faint focus:border-oxblood focus:outline-none leading-relaxed"
+                    />
+                  </div>
+
+                  {successMsg && (
+                    <p className="font-mono text-[0.62rem] text-forest font-medium">
+                      ✓ {successMsg}
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="flex-1 rounded bg-oxblood px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-paper-raised hover:bg-oxblood-deep disabled:opacity-50"
+                    >
+                      {submitting ? "Saving…" : "Save Rating"}
+                    </button>
+
+                    {hasMyEvaluation && (
+                      <button
+                        type="button"
+                        onClick={handleDeleteRating}
+                        disabled={submitting}
+                        title="Delete your evaluation"
+                        className="rounded border border-oxblood/40 bg-oxblood/10 px-2 py-1.5 font-mono text-[0.62rem] uppercase text-oxblood hover:bg-oxblood hover:text-white transition-colors"
+                      >
+                        Delete
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setShowRateForm(false)}
+                      className="rounded border border-line px-2 py-1.5 font-mono text-[0.62rem] uppercase text-ink-soft hover:text-ink"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </>
           )}
         </div>
       )}

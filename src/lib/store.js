@@ -35,6 +35,8 @@ const LS_APPLICATIONS_KEY = "sahityika_recruitment_applications_v1";
 const LS_META_KEY = "sahityika_recruitment_meta_v1";
 const LS_EVALUATIONS_KEY = "sahityika_recruitment_evaluations_v1";
 const LS_SELECTED_KEY = "sahityika_selected_candidates_v1";
+const LS_SHORTLISTED_KEY = "sahityika_shortlisted_candidates_v1";
+const LS_TEAMS_KEY = "sahityika_department_teams_v1";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -103,11 +105,12 @@ export async function getLastImportMeta() {
 
 export async function clearAllApplications() {
   if (isFirebaseConfigured) {
-    // Thoroughly wipe all application data, evaluations, selections, and meta from Firestore
+    // Thoroughly wipe all application data, evaluations, selections, shortlists, and meta from Firestore
     await Promise.all([
       deleteCollectionDocs("applications"),
       deleteCollectionDocs("evaluations"),
       deleteCollectionDocs("selected_candidates"),
+      deleteCollectionDocs("shortlisted_candidates"),
       deleteCollectionDocs("meta"),
     ]);
   } else {
@@ -115,6 +118,7 @@ export async function clearAllApplications() {
     localStorage.removeItem(LS_META_KEY);
     localStorage.removeItem(LS_EVALUATIONS_KEY);
     localStorage.removeItem(LS_SELECTED_KEY);
+    localStorage.removeItem(LS_SHORTLISTED_KEY);
   }
 }
 
@@ -238,6 +242,74 @@ export async function toggleCandidateSelection(applicantId, isSelected) {
     list = list.filter((id) => id !== applicantId);
   }
   localStorage.setItem(LS_SELECTED_KEY, JSON.stringify(list));
+}
+
+// ---------------------------------------------------------------------------
+// Candidate Shortlisting (for Interviews)
+// ---------------------------------------------------------------------------
+export async function getShortlistedCandidateIds() {
+  if (isFirebaseConfigured) {
+    const snap = await getDocs(collection(db, "shortlisted_candidates"));
+    return snap.docs.map((d) => d.id);
+  }
+  const raw = localStorage.getItem(LS_SHORTLISTED_KEY);
+  return raw ? JSON.parse(raw) : [];
+}
+
+export async function toggleCandidateShortlist(applicantId, isShortlisted) {
+  if (isFirebaseConfigured) {
+    if (isShortlisted) {
+      await setDoc(doc(db, "shortlisted_candidates", applicantId), {
+        shortlistedAt: new Date().toISOString(),
+      });
+    } else {
+      await deleteDoc(doc(db, "shortlisted_candidates", applicantId));
+    }
+    return;
+  }
+  const raw = localStorage.getItem(LS_SHORTLISTED_KEY);
+  let list = raw ? JSON.parse(raw) : [];
+  if (isShortlisted) {
+    if (!list.includes(applicantId)) list.push(applicantId);
+  } else {
+    list = list.filter((id) => id !== applicantId);
+  }
+  localStorage.setItem(LS_SHORTLISTED_KEY, JSON.stringify(list));
+}
+
+// ---------------------------------------------------------------------------
+// Department Teams (Dept Head + Up to 12 Members)
+// ---------------------------------------------------------------------------
+export async function getDepartmentTeams() {
+  if (isFirebaseConfigured) {
+    const snap = await getDocs(collection(db, "department_teams"));
+    const teams = {};
+    snap.docs.forEach((d) => {
+      teams[d.id] = d.data();
+    });
+    return teams;
+  }
+  const raw = localStorage.getItem(LS_TEAMS_KEY);
+  return raw ? JSON.parse(raw) : {};
+}
+
+export async function saveDepartmentTeam(deptSlug, teamData) {
+  const sanitized = {
+    deptSlug,
+    deptHead: teamData.deptHead || null,
+    members: (teamData.members || []).slice(0, 12),
+    updatedAt: new Date().toISOString(),
+  };
+
+  if (isFirebaseConfigured) {
+    await setDoc(doc(db, "department_teams", deptSlug), sanitized);
+  } else {
+    const raw = localStorage.getItem(LS_TEAMS_KEY);
+    const teams = raw ? JSON.parse(raw) : {};
+    teams[deptSlug] = sanitized;
+    localStorage.setItem(LS_TEAMS_KEY, JSON.stringify(teams));
+  }
+  return sanitized;
 }
 
 // ---------------------------------------------------------------------------

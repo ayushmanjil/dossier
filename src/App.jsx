@@ -8,6 +8,7 @@ import ApplicantView from "./pages/ApplicantView";
 import UploadAdmin from "./pages/UploadAdmin";
 import ManageInterviewers from "./pages/ManageInterviewers";
 import SelectedCandidates from "./pages/SelectedCandidates";
+import CurrentTeam from "./pages/CurrentTeam";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/selected" element={<SelectedCandidates />} />
+          <Route path="/team" element={<CurrentTeam />} />
           <Route path="/department/:slug" element={<DepartmentView />} />
           <Route path="/applicant/:id" element={<ApplicantView />} />
           <Route
